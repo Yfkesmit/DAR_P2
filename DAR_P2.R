@@ -93,11 +93,8 @@ feature2method <- function (queries,docs)
 descriptionterms <- feature2method(mergedQueryDescriptionCorpus_clean[[5]]$content,mergedQueryDescriptionCorpus_clean[[2]]$content)
 summary(descriptionterms)
 
-testtable <- as.data.frame(table(productQueryCorpus_clean[[4]]$content), stringsAsFactors = FALSE)
-x <- testtable[testtable$Var1 == "angle bracket", ]
-as.integer(x[1,2])
 #feature 3: hoe vaak komt de query voor in de data set?
-feature3method <- function(queries, data)
+feature3method <- function(queries)
 {
   n <- length(queries)
   a <- as.data.frame(table(queries), stringsAsFactors = FALSE)
@@ -105,12 +102,28 @@ feature3method <- function(queries, data)
   for (i in 1:n){
     query <- queries[i]
     b <- a[a$queries == query, ]
-    print(query)
-    print(as.numeric(b[1,2]))
     feature[i] <- as.numeric(b[[2]])
   }
   feature
 }
 feature3 <- feature3method(productQueryCorpus_clean[[4]]$content)
 summary(feature3)
+
+#feature4: Welk percentage van de termen in de productnaam komen voor in de zoektermen?
+feature4method <- function (queries,docs) 
+{
+  n <- length(queries)
+  feature <- vector(length=n)
+  for(i in 1:n){
+    query <- queries[i]
+    document <- docs[i]
+    a <- textcnt(query,method="string",n=1L)
+    b <- textcnt(document,method="string",n=1L)
+    c <- intersect(names(a), names(b))
+    feature[i] <- (length(c)/length(b))}
+  feature
+}
+#first parameter: queries, second parameter: product name
+feature4 <- feature4method(productQueryCorpus_clean[[4]]$content,productQueryCorpus_clean[[3]]$content)
+summary(feature4)
 
