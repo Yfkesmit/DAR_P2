@@ -48,14 +48,12 @@ mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean,
 mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean, content_transformer(removeWords), stopwords('english'))
 mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean, stripWhitespace)
 
-View(productQueryCorpus_clean[[3]]$content[1:50])
-View(productDescriptionCorpus_clean[[2]]$content[1:50])
 
 #features
 #load some libraries
+install.packages('qualV')
 library(tau)
-install.packages('plyr')
-library(plyr)
+library(qualV)
 #feature 1: komen alle zoektermen voor in de productnaam?
 # functie om te berekenen of alle querywoorden in de productnaam voorkomen
 feature1method <- function (queries,docs) 
@@ -93,7 +91,7 @@ feature2method <- function (queries,docs)
 descriptionterms <- feature2method(mergedQueryDescriptionCorpus_clean[[5]]$content,mergedQueryDescriptionCorpus_clean[[2]]$content)
 summary(descriptionterms)
 
-#feature 3: hoe vaak komt de query voor in de data set?
+#feature 3: hoe vaak komt de query voor in de data set?//basically Raw Frequency
 feature3method <- function(queries)
 {
   n <- length(queries)
@@ -127,3 +125,20 @@ feature4method <- function (queries,docs)
 feature4 <- feature4method(productQueryCorpus_clean[[4]]$content,productQueryCorpus_clean[[3]]$content)
 summary(feature4)
 
+#feature 5: lengte van de langste gemeenschappelijke substring tussen productnaam en query
+feature5method <- function (queries, productnames)
+{
+  n <- length(queries)
+  feature <- vector(length = n)
+  for (i in 1:n){
+    query <- queries[i]
+    name <- productnames[i]
+    a <- strsplit(query, " ")[[1]]
+    b <- strsplit(name, " ")[[1]]
+    lcs <- LCS(a, b)
+    feature[i] <- (lcs$LLCS)
+  }
+  feature
+}
+feature5 <- feature5method(productQueryCorpus_clean[[4]]$content[1:50], productQueryCorpus_clean[[3]]$content[1:50])
+summary(feature5)
