@@ -13,6 +13,7 @@ nrow(unique_products)
 unique_queries <- productQuery[!duplicated(productQuery$search_term), ]
 nrow(unique_queries)
 
+
 #preprocessing:
 # Install these packages if not already installed
 install.packages('readr')
@@ -25,7 +26,7 @@ library(readr)
 library(NLP)
 library(tm)
 library(SnowballC)
-library(tau)
+
 
 # Create a corpus for data pre-processing
 productQueryCorpus <- VCorpus(VectorSource(productQuery))
@@ -50,9 +51,14 @@ mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean,
 View(productQueryCorpus_clean[[3]]$content[1:50])
 View(productDescriptionCorpus_clean[[2]]$content[1:50])
 
+#features
+#load some libraries
+library(tau)
+install.packages('plyr')
+library(plyr)
 #feature 1: komen alle zoektermen voor in de productnaam?
 # functie om te berekenen of alle querywoorden in de productnaam voorkomen
-all.queryterms <- function (queries,docs) 
+feature1method <- function (queries,docs) 
 {
   n <- length(queries)
   feature <- vector(length=n)
@@ -66,13 +72,12 @@ all.queryterms <- function (queries,docs)
   feature
 }
 # bereken deze feature op de query_product tabel
-allterms <- all.queryterms(productQueryCorpus_clean[[4]]$content,productQueryCorpus_clean[[3]]$content)
+allterms <- feature1method(productQueryCorpus_clean[[4]]$content,productQueryCorpus_clean[[3]]$content)
 summary(allterms)
 
 #feature 2: hoeveel procent van de zoektermen komen voor in de product beschrijving?
-
 #functie om te berekenen hoeveel querywoorden er in de productnaam voorkomen
-descriptiontermscount <- function (queries,docs) 
+feature2method <- function (queries,docs) 
 {
   n <- length(queries)
   feature <- vector(length=n)
@@ -85,9 +90,27 @@ descriptiontermscount <- function (queries,docs)
     feature[i] <- (length(c)/length(a))}
   feature
 }
-descriptionterms <- descriptiontermscount(mergedQueryDescriptionCorpus_clean[[5]]$content,mergedQueryDescriptionCorpus_clean[[2]]$content)
+descriptionterms <- feature2method(mergedQueryDescriptionCorpus_clean[[5]]$content,mergedQueryDescriptionCorpus_clean[[2]]$content)
 summary(descriptionterms)
+
+testtable <- as.data.frame(table(productQueryCorpus_clean[[4]]$content), stringsAsFactors = FALSE)
+x <- testtable[testtable$Var1 == "angle bracket", ]
+as.integer(x[1,2])
 #feature 3: hoe vaak komt de query voor in de data set?
-
-
+feature3method <- function(queries, data)
+{
+  n <- length(queries)
+  a <- as.data.frame(table(queries), stringsAsFactors = FALSE)
+  feature <- vector(length = n)
+  for (i in 1:n){
+    query <- queries[i]
+    b <- a[a$queries == query, ]
+    print(query)
+    print(as.numeric(b[1,2]))
+    feature[i] <- as.numeric(b[[2]])
+  }
+  feature
+}
+feature3 <- feature3method(productQueryCorpus_clean[[4]]$content)
+summary(feature3)
 
