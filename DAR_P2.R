@@ -1,5 +1,7 @@
 productQuery <- read.csv("query_product.csv",stringsAsFactors=FALSE, fileEncoding="ISO-8859-1")
 productDescriptions <- read.csv("product_descriptions.csv",stringsAsFactors=FALSE, encoding = "ASCII")
+#voeg de productbeschrijving samen met de query_product tabel
+description_merged <- merge (productDescriptions, productQuery)
 
 #bereken de beschrijvende statistieken
 summary(productQuery$relevance)
@@ -23,14 +25,16 @@ library(readr)
 library(NLP)
 library(tm)
 library(SnowballC)
+library(tau)
 
 # Create a corpus for data pre-processing
 productQueryCorpus <- VCorpus(VectorSource(productQuery))
 productDescriptionCorpus <- VCorpus(VectorSource(productDescriptions))
+mergedQueryDescriptionCorpus <- VCorpus(VectorSource(description_merged))
 # Normalize the text
 productQueryCorpus_clean <- tm_map(productQueryCorpus, content_transformer(tolower))
 productQueryCorpus_clean <- tm_map(productQueryCorpus_clean, removePunctuation)
-productQueryCorpus_clean <- tm_map(productQueryCorpus, content_transformer(removeWords), stopwords('english'))
+productQueryCorpus_clean <- tm_map(productQueryCorpus_clean, content_transformer(removeWords), stopwords('english'))
 productQueryCorpus_clean <- tm_map(productQueryCorpus_clean, stripWhitespace)
 
 productDescriptionCorpus_clean <- tm_map(productDescriptionCorpus, content_transformer(tolower))
@@ -38,7 +42,13 @@ productDescriptionCorpus_clean <- tm_map(productDescriptionCorpus_clean, removeP
 productDescriptionCorpus_clean <- tm_map(productDescriptionCorpus_clean, content_transformer(removeWords), stopwords('english'))
 productDescriptionCorpus_clean <- tm_map(productDescriptionCorpus_clean, stripWhitespace)
 
-View(productDescriptionCorpus_clean[[2]]$content)
+mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus, content_transformer(tolower))
+mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean, removePunctuation)
+mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean, content_transformer(removeWords), stopwords('english'))
+mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean, stripWhitespace)
+
+View(productQueryCorpus_clean[[3]]$content[1:50])
+View(productDescriptionCorpus_clean[[2]]$content[1:50])
 
 #feature 1: komen alle zoektermen voor in de productnaam?
 # functie om te berekenen of alle querywoorden in de productnaam voorkomen
@@ -56,12 +66,11 @@ all.queryterms <- function (queries,docs)
   feature
 }
 # bereken deze feature op de query_product tabel
-allterms <- all.queryterms(query_product.dat$search_term,query_product.dat$product_title)
+allterms <- all.queryterms(productQueryCorpus_clean[[4]]$content,productQueryCorpus_clean[[3]]$content)
 summary(allterms)
 
 #feature 2: hoeveel procent van de zoektermen komen voor in de product beschrijving?
-#voeg de productbeschrijving samen met de query_product tabel
-description_merged <- merge (product_descriptions.dat, query_product.dat)
+
 #functie om te berekenen hoeveel querywoorden er in de productnaam voorkomen
 descriptiontermscount <- function (queries,docs) 
 {
@@ -76,7 +85,7 @@ descriptiontermscount <- function (queries,docs)
     feature[i] <- (length(c)/length(a))}
   feature
 }
-descriptionterms <- descriptiontermscount(description_merged$search_term,description_merged$product_description)
+descriptionterms <- descriptiontermscount(mergedQueryDescriptionCorpus_clean[[5]]$content,mergedQueryDescriptionCorpus_clean[[2]]$content)
 summary(descriptionterms)
 #feature 3: hoe vaak komt de query voor in de data set?
 
