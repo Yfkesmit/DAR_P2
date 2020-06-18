@@ -52,15 +52,13 @@ mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean,
 mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean, stripWhitespace)
 mergedQueryDescriptionCorpus_clean <- tm_map(mergedQueryDescriptionCorpus_clean, content_transformer(f))
 
+
 #features
 #load some libraries
 install.packages('qualV')
 install.packages('proxy')
-install.packages('dplyr')
 library(tau)
 library(qualV)
-library(proxy)
-library(dplyr)
 #feature 1: komen alle zoektermen voor in de productnaam?
 # functie om te berekenen of alle querywoorden in de productnaam voorkomen
 feature1method <- function (queries,docs) 
@@ -168,16 +166,62 @@ feature6method <- function (queries, productnames)
 feature6 <- feature6method(productQueryCorpus_clean[[4]]$content, productQueryCorpus_clean[[3]]$content)
 summary(feature6)
 
-termFreq(productQueryCorpus_clean[[3]])
-#function for calculating the tf's of the term in a productname
+
+
+#for calculating the term frequency in the idf
+docFrequency <- termFreq(productQueryCorpus_clean[[3]]$content)
+#function for calculating the tf's of the term in a productname, returns a vector with the tf per term
+a <- strsplit("whirlpool 19 cu ft range convection microwave stainless steel sensor cooking", " ")
+tf <- termFreq("whirlpool 19 cu ft range convection microwave stainless steel sensor cooking")
+as.numeric(tf[names(tf) == a[[1]][1]])
+tf
+a
 calculate.tf <- function(productname)
 {
-  
+    a <- strsplit(productname, " ")
+    n <- length(a[[1]])
+    tf <- termFreq(productname)
+    tf.value <- vector(length = n)
+    for (i in 1:n)
+    {
+      tf.value[i] <- as.numeric(tf[names(tf) == a[[1]][i]])
+    }
+    tf.value
 }
-#feature 7: tf-idf 
+#function for calculating the idf of a term in a productname log(totalrows/termfrequency)
+calculate.idf <- function(productname, n)
+{
+  a <- strsplit(productname, " ")
+  l <- length(a[[1]])
+  idf.value <- vector(length = l)
+  for (i in 1:l)
+  {
+    tf <- as.numeric(docFrequency[names(docFrequency) == a[[1]][i]])
+    idf.value[i] <- log10(n/tf)
+  }
+  idf.value
+}
+productQueryCorpus_clean[[3]]$content[1]
+length(productQueryCorpus_clean[[3]]$content)
+x <- calculate.tf("whirlpool 19 cu ft range convection microwave stainless steel sensor cooking")
+y <- calculate.idf("simpson strongtie 12gauge angle", 74067)
+(x*y)
+sum(x*y)
+#feature 7: sum of tf-idf per product name in the productQuery data set
 feature7method <- function(productnames)
 {
-  
+  n <- length(productnames)
+  feature <- vector(length = n)
+  for (i in 1:n)
+  {
+    productname <- productnames[i]
+    print(productname)
+    x <- (calculate.tf(productname))
+    y <- (calculate.idf(productname, 74067))
+    feature[i] <- sum(x*y)
+    print(feature[i])
+  } 
+  feature
 }
-  
-
+feature7 <- feature7method(productQueryCorpus_clean[[3]]$content[1:100])
+summary(feature7)
