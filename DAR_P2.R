@@ -169,7 +169,7 @@ summary(feature6)
 
 
 #for calculating the term frequency in the idf
-docFrequency <- termFreq(productQueryCorpus_clean[[4]]$content, control = list(wordLengths=c(1, Inf)))
+docFrequency <- termFreq(productQueryCorpus_clean[[3]]$content, control = list(wordLengths=c(1, Inf)))
 #function for calculating the tf's of the term in a productname, returns a vector with the tf per term
 calculate.tf <- function(productname)
 {
@@ -179,12 +179,12 @@ calculate.tf <- function(productname)
     tf.value <- vector(length = n)
     for (i in 1:n)
     {
-      tf.value[i] <- as.numeric(tf[names(tf) == a[[1]][i]])
+      x <- as.numeric(tf[names(tf) == a[[1]][i]])
+      tf.value[i] <- x/n
     }
     tf.value
 }
 #function for calculating the idf of a term in a productname log(totalrows/termfrequency)
-
 calculate.idf <- function(productname, n)
 {
   a <- strsplit(productname, " ")
@@ -205,12 +205,26 @@ feature7method <- function(productnames)
   for (i in 1:n)
   {
     productname <- productnames[i]
-    print(productname)
     x <- (calculate.tf(productname))
-    y <- (calculate.idf(productname, 74067))
+    y <- (calculate.idf(productname, n))
     feature[i] <- sum(x*y)
+    print(i)
   } 
   feature
 }
 feature7 <- feature7method(productQueryCorpus_clean[[3]]$content)
 summary(feature7)
+
+#lineare regressie model
+tr.index <- sample(74067,50000)
+test.index <- sample(74067)
+install.packages('rlist')
+library(rlist)
+test.index<-list.remove(test.index,tr.index)
+qp.dat <- data.frame(relevance=productQuery$relevance,feature1=feature1, feature2 = feature2, feature3 = feature3, feature4 = feature4, feature5 = feature5, feature6 = feature6, feature7 = feature7)
+qp.lm <- lm(relevance~feature1 + feature2 + feature3 + feature4 + feature5 + feature6 + feature7,data=qp.dat[tr.index,])
+summary(qp.lm)
+
+
+
+
