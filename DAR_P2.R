@@ -224,7 +224,6 @@ library(rlist)
 #indexes for splitting the training and test set
 tr.index <- sample(74067,50000)
 test.index <- sample(74067)
-
 test.index<-list.remove(test.index,tr.index)
 
 qp.dat <- data.frame(relevance=productQuery$relevance,feature1=feature1, feature2 = feature2, feature3 = feature3, feature4 = feature4, feature5 = feature5, feature6 = feature6, feature7 = feature7)
@@ -238,3 +237,24 @@ predicted.relevance <- predict(qp.lm, newdata = test.data)
 actual.relevance <- data.frame(productQuery$relevance)
 actual.relevance <- as.vector(actual.relevance[test.index,])
 rmse(predicted.relevance, actual.relevance, na.rm = TRUE)
+
+#ordinale logistische regressie
+install.packages('MASS')
+library(MASS)
+tr.index <- sample(74067,48884)
+test.index <- sample(74067)
+test.index<-list.remove(test.index,tr.index)
+#select only rows with relevance value 1, 2 or 3
+library(dplyr)
+olr.data <- filter(qp.dat, relevance == 1 | relevance == 2 | relevance == 3)
+#order the data on relevance
+olr.data <- olr.data[order(olr.data$relevance),]
+training.data <- olr.data[tr.index,]
+test.data <- olr.data[test.index,]
+#get the model
+olr.model <- polr(as.factor(relevance) ~ feature1 + feature2 + feature3 + feature4 + feature5 + feature6 + feature7, data = training.data, Hess = TRUE)
+summary(olr.model)
+
+#confusion matrix
+olr.predict = predict(olr.model,test.data)
+table(test.data$relevance, olr.predict)
