@@ -258,3 +258,5 @@ summary(olr.model)
 #confusion matrix
 olr.predict = predict(olr.model,test.data)
 table(test.data$relevance, olr.predict)
+#percentage correct voorspeld:
+mean(as.character(test.data$relevance) != as.character(olr.predict), na.rm =TRUE)
