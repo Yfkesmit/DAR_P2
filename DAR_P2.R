@@ -216,15 +216,25 @@ feature7 <- feature7method(productQueryCorpus_clean[[3]]$content)
 summary(feature7)
 
 #lineare regressie model
+install.packages('rlist')
+install.packages('hydroGOF')
+library(hydroGOF)
+library(rlist)
+
+#indexes for splitting the training and test set
 tr.index <- sample(74067,50000)
 test.index <- sample(74067)
-install.packages('rlist')
-library(rlist)
+
 test.index<-list.remove(test.index,tr.index)
+
 qp.dat <- data.frame(relevance=productQuery$relevance,feature1=feature1, feature2 = feature2, feature3 = feature3, feature4 = feature4, feature5 = feature5, feature6 = feature6, feature7 = feature7)
-qp.lm <- lm(relevance~feature1 + feature2 + feature3 + feature4 + feature5 + feature6 + feature7,data=qp.dat[tr.index,])
+training.data <- qp.dat[tr.index,]
+test.data <- qp.dat[test.index,]
+qp.lm <- lm(relevance~feature1 + feature2 + feature3 + feature4 + feature5 + feature6 + feature7, data = training.data)
 summary(qp.lm)
 
-
-
-
+#get the rmse
+predicted.relevance <- predict(qp.lm, newdata = test.data)
+actual.relevance <- data.frame(productQuery$relevance)
+actual.relevance <- as.vector(actual.relevance[test.index,])
+rmse(predicted.relevance, actual.relevance, na.rm = TRUE)
