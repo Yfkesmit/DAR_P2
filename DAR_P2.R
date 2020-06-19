@@ -215,6 +215,56 @@ feature7method <- function(productnames)
 feature7 <- feature7method(productQueryCorpus_clean[[3]]$content)
 summary(feature7)
 
+#feature 8: GloVe word embeddings
+install.packages('text2vec')
+library(text2vec)
+
+calc_cos_sim <- function(productdescription)
+{
+  # you need this i think productDescriptionCorpus_clean[1]$content[2]$product_description$content
+  it = itoken(productdescription, tolower, word_tokenizer, n_chunks = 10)
+  vocab = create_vocabulary(it)
+  vocab = prune_vocabulary(vocab, term_count_min = 10, doc_proportion_max = 0.8,doc_proportion_min = 0.001, vocab_term_max = 20000)
+  dim(vocab)
+  
+  vectorizer = vocab_vectorizer(vocab)
+  tcm = create_tcm(it, vectorizer, skip_grams_window = 5L)
+  glove = GlobalVectors$new(rank = 50, x_max = 10)
+  wv_main = glove$fit_transform(tcm, n_iter = 50, convergence_tol = 0.01)
+  wv_context = glove$components
+  word_vectors = wv_main + t(wv_context)
+  cos_sim = sim2(x = word_vectors, method = "cosine", norm = "l2")
+  
+  cos_sim
+}
+
+feature8method <- function(queries)
+{
+  cos_sim <- calc_cos_sim(mergedQueryDescriptionCorpus_clean[[2]]$content)
+  
+  n <- length(queries)
+  feature <- vector(length = n)
+  
+  for (i in 1:n)
+  {
+    query <- queries
+    descriptions <- mergedQueryDescriptionCorpus_clean[[2]]$content
+    m <- length(descriptions)
+    summation <- 0
+    for (j in 1:m)
+    {
+      summation <- summation + cos_sim[query, descriptions[j]]
+      print(summation)
+    }
+    feature[i] <- summation
+    print(i)
+  } 
+  feature
+}
+
+feature8 <- feature8method(mergedQueryDescriptionCorpus_clean[[4]]$content)
+summary(feature8)
+
 #lineare regressie model
 install.packages('rlist')
 install.packages('hydroGOF')
